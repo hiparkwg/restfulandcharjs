@@ -3,154 +3,170 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>chart</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>chart</title>
     <style>
         #chart{
-            width: 600px;
+            width:600px;
         }
-        #chart>h2{
-            text-align: center;
-        }
-        #chart_area{
-            width:100%;
-            height : 320px;
-            border : 4px solid #aaa;            
-        }
-        #btnZone{
-            margin-top:5px;
+        #chart > h2{
             text-align : center;
         }
+        #chart_area{
+            width: 100%;
+            height : 400px;
+            border: 2px solid #aaa;
+        }
+        #btnZone{
+            text-align:center;
+        }
     </style>
+
 </head>
 <body>
     <div id="chart">
-        <h2>RESTful API & chartjs</h2>
+        <h2>RESTful API And chart.js</h2>
         <div id="chart_area">
             <canvas id="mychart"></canvas>
         </div>
+
         <div id="btnZone">
             <button type="button" id="btnMonth">월별</button>
             <button type="button" id="btnQuater">분기별</button>
-            <label><input type="radio" name="chartType" class="chartType" value="bar" checked>bar</label>
-            <label><input type="radio" name="chartType" class="chartType" value="line">line</label>
+            <label><input type="radio" name="chartType" class="chartType" value="bar" checked>BAR</label>
+            <label><input type="radio" name="chartType" class="chartType" value="line">LINE</label>
             <label><input type="radio" name="chartType" class="chartType" value="pie">pie</label>
         </div>
-    </div>     
+    </div>       
     <script>
         let ctx = document.querySelector("#mychart");
-        let chart;
-        let list; // 월별 데이터
-        let quater; // 분기별 데이터
-        let byList = '월별';// 월별, 분기별구분
-        let type = 'bar'; // 차트의 종류    
-        let config;// 차트 옵션
+        let data = [
+          { 'month' : 1, 'sale' : 500, 'bgColor' : '#f00'},
+          { 'month' : 2, 'sale' : 200, 'bgColor' : '#00f'},
+          { 'month' : 3, 'sale' : 300, 'bgColor' : '#0f0'},
+          { 'month' : 4, 'sale' : 250, 'bgColor' : '#ff0'},
+          { 'month' : 5, 'sale' : 50, 'bgColor' : '#0ff'},
+          { 'month' : 9, 'sale' : 150, 'bgColor' : '#555'},
+          { 'month' : 12, 'sale' :350, 'bgColor' : '#ccc'},
+        ];
+        let quater =[
+            {'quater' : 1, 'sale' : 0},
+            {'quater' : 2, 'sale' : 0},
+            {'quater' : 3, 'sale' : 0},
+            {'quater' : 4, 'sale' : 0},
+        ]
 
-        loadData = async (byList)=>{
-            let param ={
+        let type="bar";
+        let byList = "월별"; // 월별, 분기별
+
+        async function loadData(byList){
+            let param = {
                 'byList' : byList
             }
-            let resp = await fetch("/listData", {
-                method: 'POST',
+            let resp = await fetch("/loadData", {
+                method: "POST",
                 headers:{
                     'Content-Type' : 'application/json'
                 },
-                body : JSON.stringify(param)
-            });
-            let data = await resp.json();
-            return data.result;
+                body: JSON.stringify(param)
+            })
             
+            resp = await resp.json();
+            console.table(resp.result);
+            if(byList=='월별'){
+                data = resp.result;
+            }else{
+                quater = resp.result;
+            }
+        }
+
+
+        function makeQuater(){
+            quater.forEach(q=>q.sale=0);
+            data.forEach(d=>{
+                if(d.month<=3)      quater[0].sale += d.sale;
+                else if(d.month<=6) quater[1].sale += d.sale;
+                else if(d.month<=9) quater[2].sale += d.sale;
+                else if(d.month<=12) quater[3].sale += d.sale;
+            })
         }
 
         
-
-        ( async ()=>{
-            list = await loadData("월별")
-
-            config ={
-                data :{
-                    labels : list.map(d=>d.month),
-                    datasets : [
-                        {
-                            type : type,
-                            data : list.map(d=>d.sale),
-                            backgroundColor : list.map(d=>d.bgColor),
-                        }
-                    ]
+        let config ={
+            data :{
+                labels : data.map(d=>d.month), // 차트 x축의 항목
+                datasets:[
+                {
+                    type : type, // 차트의 종류
+                    data : data.map(d=>d.sale), // 표시될 값
+                    backgroundColor : data.map(d=>d.bgColor),
                 },
-                options:{
-                    plugins:{
-                        title:{
-                            text : '월별 매출 현황',
-                            display : true,
-    
-                        },
-                        legend : {
-                            display : false,
-                        }
+                ]
+            },
+            options:{
+                plugins:{
+                    title :{
+                        text : '매출현황',
+                        display : true,
+                    },
+                    legend:{
+                        display : false,
                     }
                 }
             }
-                
-            chart = new Chart(ctx, config);
-            
-        })()
+        }
+        let chart = new Chart(ctx, config);
 
-        
-        // 월별
-        let btnMonth = document.querySelector("#btnMonth");
-        btnMonth.addEventListener('click', async ()=>{
-            byList = '월별';
-            chart.config.data.datasets[0].type = type;
-            config.options.plugins.title.text='월별 매출 현황';
-            list = await loadData(byList);
-            if(type=='pie'){
-                config.data.labels = null;
-            }else{
-                config.data.labels = list.map(d=>d.month);
-            }
-            
-            config.data.datasets[0].backgroundColor = list.map(d=>d.bgColor)
-            config.data.datasets[0].data = list.map(d=>d.sale);
-            chart.update();
-        })
-
-        // 분기별
-        let btnQuater = document.querySelector("#btnQuater");
-        btnQuater.addEventListener('click', async ()=>{
-            byList = '분기별';
-            chart.config.data.datasets[0].type = type;
-            config.options.plugins.title.text='분기별 매출 현황';
-
-            list = await loadData(byList);
-            
-            if(type=='pie'){
-                config.data.labels = null;    
-            }else{
-                config.data.labels = list.map(d=>d.quater);
-            }
-            
-            config.data.datasets[0].backgroundColor = list.map(d=>d.bgColor)
-            config.data.datasets[0].data = list.map(d=>d.sale);
-            chart.update();
-
-        })
-
-
-        // 차트 변경하기
         let chartType = document.querySelectorAll(".chartType");
         chartType.forEach(btn=>{
-            btn.addEventListener('change', ()=>{
-                type = btn.value;
-               
-                if(byList=='월별'){
-                    btnMonth.click();
+            btn.addEventListener('change', async ()=>{
+                type = btn.value; // bar, line, pie
+                config.data.datasets[0].type = type;
+
+                if(type=='pie'){
+                    config.data.labels = null;
                 }else{
-                    btnQuater.click();
+                    if(byList=='월별'){
+                        config.data.labels= data.map(d=>d.month);
+                    }else{
+                        config.data.labels=quater.map(q=>q.quater);
+                    }
                 }
+                chart.update();
             })
         })
 
-    </script>   
+        //월별
+        let btnMonth = document.querySelector("#btnMonth");
+        btnMonth.addEventListener('click', ()=>{
+            byList = "월별";
+            loadData(byList);
+            if(type=='pie'){
+                config.data.labels=null;    
+            }else{
+                config.data.labels= data.map(d=>d.month);
+            }
+            config.data.datasets[0].data = data.map(d=>d.sale);
+            config.options.plugins.title.text = "월별 판매현황";
+            chart.update();
+        })
+ 
+        //분기별
+        let btnQuater = document.querySelector("#btnQuater");
+        btnQuater.addEventListener('click', ()=>{
+            byList="분기별";
+            loadData(byList);
+            //makeQuater();
+            if(type=='pie'){
+                config.data.labels=null;
+            }else{
+                config.data.labels=quater.map(q=>q.quater);
+            }
+            config.data.datasets[0].data = quater.map(q=>q.sale);
+            config.options.plugins.title.text = "분기별 판매현황";
+            chart.update();
+        })
+        
+    </script>
 </body>
 </html>
