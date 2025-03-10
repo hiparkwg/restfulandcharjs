@@ -1,4 +1,4 @@
-package kr.jobtc.restfulandchartjs;
+package kr.jobtc.restfulandcharjs;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -10,29 +10,35 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class ChartDto {
-    String[] bgColor ={"#f00","#0f0","#00f", "#f0f"}; //분기별 색상
+    String[] bgColor ={"#f00","#00f","#0f0", "#ff0"};
     List<Map<String, Object>> data;
-
-    public List<Map<String, Object>> getMonthData(){ // 월별 데이터
+    
+    // db 대용
+    public void createData(){
         data = new ArrayList<>();
-        Random rnd = new Random(); //월
-        for(int month = 1; month<=12 ; month++){
+        Random rnd = new Random();
+        for(int month=1; month<=12 ; month++){
             int sale = rnd.nextInt(191)+10; // 10~200
-            int color = (int)Math.ceil(month/3.0)-1;//0~3
-
+            int color = (int)Math.ceil(month/3.0)-1;
             Map<String, Object> map = new HashMap<>();
-            map.put("month", month );
+            map.put("month", month);
             map.put("sale", sale);
             map.put("bgColor", bgColor[color]);
             data.add(map);
         }
+    }
+
+    // 월별 데이터
+    public List<Map<String, Object>> getMonthData(){
+        if(data==null) createData();
         return data;
     }
 
-    public List<Map<String, Object>> getQuateData(){
-        List<Map<String, Object>> quateData = new ArrayList<>();
+    // 분기별 데이터
+    public List<Map<String, Object>> getQuaterData(){
+        if(data==null) createData();
+        List<Map<String, Object>> quaterData = new ArrayList();
         int[] saleData = new int[4];
-        if(data == null) data = getMonthData();
         for(Map<String, Object> m : data){
             Integer month = (Integer)m.get("month");
             Integer sale = (Integer)m.get("sale");
@@ -40,15 +46,13 @@ public class ChartDto {
             saleData[quater] += sale;
         }
 
-        for(int i=0 ; i<saleData.length ; i++){
-            Map<String, Object> temp = new HashMap<>();
-            temp.put("quater", (i+1));
-            temp.put("sale", saleData[i]);
-            quateData.add(temp);            
+        for(int i=0; i<saleData.length ; i++){
+            Map<String, Object> map = new HashMap<>();
+            map.put("month", (i+1));
+            map.put("sale", saleData[i]);
+            map.put("bgColor", bgColor[i]);
+            quaterData.add(map);
         }
-
-        return quateData;
-
+        return quaterData;
     }
-
 }
