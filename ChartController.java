@@ -1,4 +1,4 @@
-package kr.jobtc.restfulandchartjs;
+package kr.jobtc.restfulandcharjs;
 
 import java.util.HashMap;
 import java.util.List;
@@ -9,35 +9,30 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.servlet.ModelAndView;
 
 @RestController
 public class ChartController {
-    
+
     @Autowired
     ChartDto dto;
 
-    @GetMapping("/")
-    public ModelAndView chart(){
-        ModelAndView mv = new ModelAndView();
-        mv.setViewName("chart"); // templates/chart.html
-        return mv;
-    }
-
-    @PostMapping("loadData")
-    public Map<String, Object> loadData(@RequestBody Map<String, String> param){
-        Map<String, Object> returnMap = new HashMap<>();
+    @PostMapping("/loadData")
+    public Map<String, Object> loadData(@RequestBody Map<String, String> param ){
+        Map<String, Object> resultMap = new HashMap<>();
         List<Map<String, Object>> data = null;
+        String byList = param.get("byList");
+        System.out.println(byList);
 
-        String byList =param.get("byList");
-        if(byList.equals("월별")){
-            data = dto.getMonthData();
-        }else{ // 분기별
-            data = dto.getQuateData();
-        }
+        if(byList.equals("월별")) data = dto.getMonthData();
+        else                      data = dto.getQuaterData();
 
-        returnMap.put("result", data);
-        return returnMap;
+        resultMap.put("result", data);
+        return resultMap;
     }
-    
+
+    @GetMapping("/createData")
+    public void createData(){
+        dto.createData();
+    }
+
 }
